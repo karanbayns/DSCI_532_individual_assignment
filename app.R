@@ -3,7 +3,8 @@ library(bslib)
 library(readr)
 library(dplyr)
 library(ggplot2)
-library(ellmer) 
+library(ellmer)
+library(shinychat)
 
 # Load in data
 df_raw <- read_csv("data/StudentPerformanceFactors.csv")
