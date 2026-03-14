@@ -113,13 +113,14 @@ server <- function(input, output, session) {
   
   # --- AI Chat Initialization ---
   # Set up the LLM object. Requires OPENAI_API_KEY in your .Renviron
-  chat <- ChatOpenAI$new(
-    system_prompt = paste(
-      "You are a helpful AI data assistant for an Academic Performance Dashboard.",
-      "Your goal is to help users understand factors like attendance, study hours,",
-      "and family background, and how they relate to exam scores."
-    )
+  chat <- ellmer::chat_google_gemini(
+  model = "gemini-2.5-flash",
+  system_prompt = paste(
+    "You are a helpful AI data assistant for an Academic Performance Dashboard.",
+    "Your goal is to help users understand factors like attendance, study hours,",
+    "and family background, and how they relate to exam scores."
   )
+)
   
   # Connect the UI to the chat server logic
   chat_server("chat_module", chat)
