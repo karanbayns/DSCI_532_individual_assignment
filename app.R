@@ -4,7 +4,6 @@ library(readr)
 library(dplyr)
 library(ggplot2)
 library(ellmer)
-library(shinychat)
 
 # Load in data
 df_raw <- read_csv("data/StudentPerformanceFactors.csv")
@@ -75,23 +74,6 @@ ui <- page_fluid(
           col_widths = c(6, 6)
         )
       )
-    ),
-    nav_panel(
-      "AI Assistant",
-      layout_sidebar(
-        sidebar = sidebar(
-          width = 400,
-          title = "AI Chat",
-          # Replaced placeholder with the ellmer chat UI
-          chat_ui("chat_module")
-        ),
-        card(
-          card_header("Filtered Data Preview"),
-          tableOutput("ai_data_table"),
-          downloadButton("download_ai_output", "Download dataframe as CSV"),
-          full_screen = TRUE
-        )
-      )
     )
   )
 )
@@ -110,20 +92,6 @@ server <- function(input, output, session) {
         Parental_Education_Level %in% input$parent_edu
       )
   })
-  
-  # --- AI Chat Initialization ---
-  # Set up the LLM object. Requires OPENAI_API_KEY in your .Renviron
-  chat <- ellmer::chat_google_gemini(
-  model = "gemini-2.5-flash",
-  system_prompt = paste(
-    "You are a helpful AI data assistant for an Academic Performance Dashboard.",
-    "Your goal is to help users understand factors like attendance, study hours,",
-    "and family background, and how they relate to exam scores."
-  )
-)
-  
-  # Connect the UI to the chat server logic
-  chat_server("chat_module", chat)
   
   # Value Boxes
   output$avg_score <- renderText({
