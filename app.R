@@ -3,9 +3,7 @@ library(bslib)
 library(readr)
 library(dplyr)
 library(ggplot2)
-
-# If you port your custom querychat module to R, you would source it here:
-# source("querychat.R")
+library(ellmer) 
 
 # Load in data
 df_raw <- read_csv("data/StudentPerformanceFactors.csv")
@@ -82,13 +80,12 @@ ui <- page_fluid(
       layout_sidebar(
         sidebar = sidebar(
           width = 400,
-          # PLACEHOLDER: Your custom querychat UI would go here.
-          # e.g., qc_ui("chat_module")
-          h5("AI Chat Placeholder"),
-          p("Port your querychat.py logic to R or use the 'ellmer' package here.")
+          title = "AI Chat",
+          # Replaced placeholder with the ellmer chat UI
+          chat_ui("chat_module")
         ),
         card(
-          card_header("Filtered Data"),
+          card_header("Filtered Data Preview"),
           tableOutput("ai_data_table"),
           downloadButton("download_ai_output", "Download dataframe as CSV"),
           full_screen = TRUE
@@ -113,6 +110,19 @@ server <- function(input, output, session) {
       )
   })
   
+  # --- AI Chat Initialization ---
+  # Set up the LLM object. Requires OPENAI_API_KEY in your .Renviron
+  chat <- ChatOpenAI$new(
+    system_prompt = paste(
+      "You are a helpful AI data assistant for an Academic Performance Dashboard.",
+      "Your goal is to help users understand factors like attendance, study hours,",
+      "and family background, and how they relate to exam scores."
+    )
+  )
+  
+  # Connect the UI to the chat server logic
+  chat_server("chat_module", chat)
+  
   # Value Boxes
   output$avg_score <- renderText({
     data <- filtered_data()
@@ -132,7 +142,7 @@ server <- function(input, output, session) {
     sprintf("%.1f%%", mean(data$Attendance, na.rm = TRUE))
   })
   
-  # Reusable theme for ggplot2 (equivalent to your apply_theme function)
+  # Reusable theme for ggplot2
   base_theme <- theme_minimal() +
     theme(
       axis.text = element_text(size = 14),
@@ -163,7 +173,7 @@ server <- function(input, output, session) {
     ggplot(data, aes(x = Family_Income, y = Exam_Score, fill = Family_Income)) +
       geom_boxplot() +
       scale_fill_viridis_d(guide = "none") +
-      coord_cartesian(ylim = c(55, 80)) + # coord_cartesian clips without dropping outliers
+      coord_cartesian(ylim = c(55, 80)) + 
       labs(x = "Family Income", y = "Exam Score") +
       base_theme
   })
@@ -172,7 +182,6 @@ server <- function(input, output, session) {
     data <- filtered_data() %>% filter(!is.na(Parental_Involvement), !is.na(Exam_Score))
     if (nrow(data) == 0) return(ggplot() + theme_void())
     
-    # Calculate means (Altair did this automatically via mean(Exam_Score))
     summary_df <- data %>%
       group_by(Parental_Involvement) %>%
       summarize(mean_score = mean(Exam_Score, na.rm = TRUE)) %>%
@@ -199,21 +208,19 @@ server <- function(input, output, session) {
       base_theme
   })
   
-  # --- AI Data Output (Placeholder logic) ---
-  
-  # Replace this reactive with wherever your AI module stores the filtered dataframe.
-  ai_df_reactive <- reactive({
-    data.frame(Message = "AI functionality requires R implementation.")
-  })
-  
+  # --- AI Data Output ---
+  # Instead of the dummy message, let's preview the first 10 rows of the filtered data
   output$ai_data_table <- renderTable({
-    ai_df_reactive()
+    head(filtered_data(), 10)
   })
   
+  # Download button now pulls the full filtered dataset
   output$download_ai_output <- downloadHandler(
-    filename = function() { "ai_filtered_data.csv" },
+    filename = function() { 
+      paste0("ai_filtered_data_", Sys.Date(), ".csv") 
+    },
     content = function(file) {
-      write.csv(ai_df_reactive(), file, row.names = FALSE)
+      write.csv(filtered_data(), file, row.names = FALSE)
     }
   )
 }
